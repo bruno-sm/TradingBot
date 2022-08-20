@@ -1,0 +1,90 @@
+version: "3.9"
+services:
+  bot:
+    build: .
+    command: sbt compile run
+    volumes:
+      - .:/app
+    environment:
+    - SIMULATION=true
+    - INFLUXDB_URL=http://influxdb:8086
+    - INFLUXDB_TOKEN=QXVBhRl3KDOFn0zlzR8c3gcHHO9fjQvY
+    - INFLUXDB_BUCKET=bucket
+    - INFLUXDB_ORG=org
+    - TOKENS=BUSD:0xe9e7cea3dedca5984780bafc599bd69add087d56,BNB:0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c,BTC:0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c,BAT:0x101d82428437127bf1608f699cd651e6abf9766e,ZEC:0x1ba42e5193dfa8b03d15dd1b86a3113bbbef8eeb,ETH:0x2170ed0880ac9a755fd29b2688956bd959f933f8,AVAX:0x1ce0c2827e2ef14d5c4f29a091d735a204794041
+    - ACCOUNT_UNIT_TOKEN=BUSD
+    secrets:
+       - public_key
+       - private_key
+       - web3_provider_url
+    networks:
+        bot_net:
+
+  influxdb:
+    image: "influxdb:latest"
+    restart: always
+    ports:
+      - 8086:8086
+    volumes:
+      - influxdb_data:/var/lib/influxdb:rw
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=password
+      - DOCKER_INFLUXDB_INIT_ORG=org
+      - DOCKER_INFLUXDB_INIT_BUCKET=bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=QXVBhRl3KDOFn0zlzR8c3gcHHO9fjQvY
+      - DOCKER_INFLUXDB_HTTP_AUTH_ENABLED=true
+    networks:
+      bot_net:
+
+  chronograf:
+    image: "chronograf:latest"
+    restart: always
+    ports:
+      - 8888:8888
+    volumes:
+      - chronograf_data:/var/lib/chronograf:rw
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_ORG=org
+      - INFLUXDB_TOKEN=QXVBhRl3KDOFn0zlzR8c3gcHHO9fjQvY
+      - KAPACITOR_URL=http://kapacitor:9092
+    depends_on:
+      - influxdb
+      - kapacitor
+    networks:
+      bot_net:
+
+  kapacitor:
+    image: "kapacitor:latest"
+    restart: always
+    ports:
+      - 9092:9092
+    volumes:
+      - kapacitor_data:/var/lib/kapacitor:rw
+    environment:
+      - KAPACITOR_INFLUXDB_0_URLS_0=http://influxdb:8086
+      - KAPACITOR_INFLUXDB_0_TOKEN=QXVBhRl3KDOFn0zlzR8c3gcHHO9fjQvY
+      - KAPACITOR_INFLUXDB_0_DISABLE_SUBSCRIPTIONS=true
+    depends_on:
+      - influxdb
+    networks:
+      bot_net:
+
+secrets:
+   public_key:
+     file: secrets/public_key.txt
+   private_key:
+     file: secrets/private_key.txt
+   web3_provider_url:
+     file: secrets/web3_provider_url.txt
+
+volumes:
+  influxdb_data:
+  chronograf_data:
+  kapacitor_data:
+
+networks:
+  bot_net:
+    driver: bridge

@@ -1,0 +1,8 @@
+{
+    "name": "TradingBot Devcontainer",
+    "dockerComposeFile": ["../docker-compose.yml", "docker-compose.extend.yml"],
+    "service": "bot",
+    "workspaceFolder": "/workspace",
+    "shutdownAction": "stopCompose",
+    "extensions": ["scalameta.metals"]
+  }

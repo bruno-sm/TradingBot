@@ -1,0 +1,6 @@
+.bloop/
+.metals/
+.vscode/
+secrets/
+target/
+project/
